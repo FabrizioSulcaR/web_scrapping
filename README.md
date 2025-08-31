@@ -41,3 +41,25 @@ CLI options
 Notes
    - The script links each comment to its parent post via the post_id field.
    - Ensure your Reddit app is of type "script"; username/password are required for that app type.
+
+Flow diagram
+```mermaid
+flowchart TD
+  A["Start"] --> B["Load .env with credentials"]
+  B --> C["Create authenticated PRAW Reddit client"]
+  C --> D{"Select mode and inputs"}
+  D -->|"--subreddits"| E["Iterate subreddits"]
+  D -->|"--mode (hot/top)"| F["Fetch posts per subreddit"]
+  D -->|"--posts-per-subreddit"| F
+  E --> F
+  F --> G["Aggregate posts"]
+  G --> H{"Select subset for comments"}
+  H -->|"--subset-size (0=all)"| I["Choose top-N by score"]
+  I --> J["For each selected post: fetch top comments"]
+  J --> K["Collect up to --comments-per-post per post"]
+  K --> L["Ensure output/ directory exists"]
+  L --> M["Write posts.csv to output/"]
+  L --> N["Write comments.csv to output/"]
+  M --> O["End"]
+  N --> O
+```
