@@ -63,3 +63,60 @@ flowchart TD
   M --> O["End"]
   N --> O
 ```
+
+Yahoo Gainers Scraper (Selenium + yfinance)
+
+Overview
+This script scrapes Yahoo Finance Top Gainers (50 symbols), stores them in a CSV, downloads 1-year monthly Adj Close prices with yfinance, builds a wide matrix per symbol, and creates a simple ranked portfolio based on high geometric mean and low volatility in the first 6 months.
+
+Setup
+1) Requirements are in requirements.txt (already used for Reddit):
+   - pandas, selenium, yfinance, numpy, openpyxl
+   - Ensure Google Chrome is installed. Selenium 4.6+ auto-manages the driver.
+
+2) Install dependencies
+   - python3 -m venv .venv
+   - source .venv/bin/activate
+   - pip install -r requirements.txt
+
+Run the scraper
+   - python code/web_scraping_yahoo.py
+
+Outputs
+   - output/yahoo_top_gainers_50.csv
+   - output/adj_close_monthly_1y_wide.xlsx
+   - output/portfolio_last6m_ranked.xlsx
+
+Notes
+   - The script accepts cookie banners automatically when present.
+   - To run headless, change build_driver(headless=False) to build_driver(headless=True) in code/web_scraping_yahoo.py.
+   - Network reliability matters for both Selenium page loads and yfinance downloads; the script includes simple retries.
+
+Flow diagram
+```mermaid
+flowchart TD
+  A["Start"] --> B["Build Selenium Chrome driver"]
+  B --> C["Load Yahoo Finance Top Gainers page 1 (25)"]
+  C --> D["Accept cookies if present"]
+  D --> E["Scroll and wait for table rows >= 25"]
+  E --> F["Extract rows: (symbol, name)"]
+  F --> G["Load page 2 (offset=25)"]
+  G --> H["Wait rows and extract more"]
+  H --> I["Deduplicate and cap at 50"]
+  I --> J{"Have 50?"}
+  J -- No --> K["Try single page count=100; extract unique"]
+  K --> L["Build DataFrame (first 50)"]
+  J -- Yes --> L
+  L --> M["Write output/yahoo_top_gainers_50.csv"]
+  M --> N["Download 1y monthly Adj Close via yfinance (batched)"]
+  N --> O["Normalize to month-end index (12 months)"]
+  O --> P["Build wide matrix per symbol"]
+  P --> Q["Join symbol names; write adj_close_monthly_1y_wide.xlsx"]
+  Q --> R["Compute first 6 months returns"]
+  R --> S["Geometric mean, volatility, score = mean/vol"]
+  S --> T["Select top 10 by score (equiponderada)"]
+  T --> U["Compute last 6 months returns for selected"]
+  U --> V["Portfolio monthly returns and summary"]
+  V --> W["Write portfolio_last6m_ranked.xlsx"]
+  W --> X["End"]
+```
